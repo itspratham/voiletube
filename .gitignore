@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+venv
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.production
+
+# Terraform
+infrastructure/.terraform/
+infrastructure/*.tfstate
+infrastructure/*.tfstate.backup
+infrastructure/*.tfvars
+infrastructure/.terraform.lock.hcl
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+celerybeat-schedule

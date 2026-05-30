@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="vt-mark-bg" x1="10" x2="54" y1="8" y2="58">
+      <stop offset="0%" stop-color="#6d28d9" />
+      <stop offset="58%" stop-color="#be185d" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <linearGradient id="vt-mark-play" x1="24" x2="44" y1="20" y2="44">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <filter id="vt-mark-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#111722" flood-opacity="0.22" />
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="48" height="48" rx="16" fill="url(#vt-mark-bg)" filter="url(#vt-mark-shadow)" />
+  <path d="M20 20h7.4l5.1 17.7L37.7 20H45L36.8 44h-8.6Z" fill="#ffffff" opacity="0.92" />
+  <path d="M35.5 25.5 46 32 35.5 38.5Z" fill="url(#vt-mark-play)" />
+  <rect x="8.75" y="8.75" width="46.5" height="46.5" rx="15.25" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="1.5" />
+</svg>

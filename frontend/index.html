@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voiletube</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var THEME_KEY = 'voiletube-theme';
+      var storedTheme = localStorage.getItem(THEME_KEY);
+      var theme = storedTheme === 'light' || storedTheme === 'dark'
+        ? storedTheme
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      var vars = theme === 'dark'
+        ? {
+            '--vt-bg': '0 0 0',
+            '--vt-surface': '13 10 20',
+            '--vt-border': '49 39 68',
+            '--vt-text': '250 248 255',
+            '--vt-muted': '177 166 199',
+            '--vt-accent': '162 53 255',
+            '--vt-accent-hover': '190 106 255',
+            '--vt-chip': '27 20 40',
+            '--vt-chip-hover': '43 32 63'
+          }
+        : {
+            '--vt-bg': '255 255 255',
+            '--vt-surface': '255 255 255',
+            '--vt-border': '224 214 241',
+            '--vt-text': '30 18 47',
+            '--vt-muted': '99 87 122',
+            '--vt-accent': '109 40 217',
+            '--vt-accent-hover': '88 28 190',
+            '--vt-chip': '246 240 255',
+            '--vt-chip-hover': '237 226 252'
+          };
+
+      document.documentElement.classList.add(theme);
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+
+      Object.keys(vars).forEach(function (key) {
+        document.documentElement.style.setProperty(key, vars[key]);
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+version: "3.9"
+
+services:
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: viewtube
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Django API ──────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 8000 viewtube.asgi:application"
+    volumes:
+      - ./backend:/app
+      - media_files:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─── Celery Worker ───────────────────────────────────────────────────────────
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A viewtube worker -l info -c 4
+    volumes:
+      - ./backend:/app
+      - media_files:/app/media
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - api
+      - redis
+
+  # ─── Celery Beat (scheduler) ─────────────────────────────────────────────────
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A viewtube beat -l info
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+  # ─── React Frontend ──────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_files:
