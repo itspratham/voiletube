@@ -89,6 +89,9 @@ jobs:
       - name: Check migrations
         run: python manage.py makemigrations --check --dry-run
 
+      - name: Apply database migrations
+        run: python manage.py migrate --noinput
+
       - name: Run backend tests
         run: python manage.py test --verbosity=2
 
@@ -170,6 +173,37 @@ jobs:
           docker push "$ECR_REGISTRY/$ECR_API_REPO:latest"
           echo "image=$ECR_REGISTRY/$ECR_API_REPO:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Register backend task definition
+        id: task-definition
+        env:
+          IMAGE_URI: ${{ steps.build-api.outputs.image }}
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_TASK_DEFINITION" \
+            --query taskDefinition > task-definition.json
+
+          jq --arg image "$IMAGE_URI" --arg container "$ECS_CONTAINER_NAME" '
+            .containerDefinitions |= map(
+              if .name == $container then .image = $image else . end
+            )
+            | del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            )
+          ' task-definition.json > new-task-definition.json
+
+          TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "arn=$TASK_DEFINITION_ARN" >> "$GITHUB_OUTPUT"
+
       - name: Build and deploy frontend
         working-directory: frontend
         env:
@@ -190,7 +224,7 @@ jobs:
         run: |
           TASK_ARN=$(aws ecs run-task \
             --cluster "$ECS_CLUSTER" \
-            --task-definition "$ECS_TASK_DEFINITION" \
+            --task-definition "${{ steps.task-definition.outputs.arn }}" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=DISABLED}" \
             --overrides "{\"containerOverrides\":[{\"name\":\"$ECS_CONTAINER_NAME\",\"command\":[\"python\",\"manage.py\",\"migrate\",\"--noinput\"]}]}" \
@@ -220,6 +254,7 @@ jobs:
           aws ecs update-service \
             --cluster "$ECS_CLUSTER" \
             --service "$ECS_SERVICE" \
+            --task-definition "${{ steps.task-definition.outputs.arn }}" \
             --force-new-deployment
 
       - name: Wait for backend service stability
